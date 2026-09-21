@@ -7,7 +7,7 @@ usage() {
 socks2awg — SOCKS-вход → персональный AmneziaWG-туннель
 
 socks2awg                            Меню
-socks2awg add NAME [FILE] [--port N]  Импорт файла или вставка до строки END
+socks2awg add NAME [FILE] [--port N]  Импорт файла или вставка (две пустые строки — конец)
 socks2awg list                       Профили и состояние контейнеров
 socks2awg show NAME                  Пароль и ссылка подключения
 socks2awg check [NAME]               Запрос через один / все SOCKS
@@ -153,14 +153,21 @@ add_profile() (
         [[ $(wc -c <"$input") -le 65536 ]] || die 'Конфиг слишком большой (максимум 64 KiB).'
         cp -- "$input" "$stage/source.conf"
     else
-        say 'Вставьте AWG-конфиг. Для завершения — END отдельной строкой (ввод виден).'
-        local finished=0
+        say 'Вставьте AWG-конфиг. Для завершения оставьте две пустые строки подряд (Enter дважды). Ввод виден.'
+        local finished=0 blank_lines=0
         while IFS= read -r line; do
+            line=${line%$'\r'}
             [[ $line != END ]] || { finished=1; break; }
+            if [[ $line != *[![:space:]]* ]]; then
+                blank_lines=$((blank_lines + 1))
+                if ((blank_lines == 2)); then finished=1; break; fi
+            else
+                blank_lines=0
+            fi
             printf '%s\n' "$line" >>"$stage/source.conf"
             [[ $(wc -c <"$stage/source.conf") -le 65536 ]] || die 'Конфиг слишком большой.'
         done
-        ((finished)) || die 'Ввод прерван: ожидается END. Профиль не создан.'
+        ((finished)) || die 'Ввод прерван: ожидаются две пустые строки или END. Профиль не создан.'
     fi
     [[ -s $stage/source.conf ]] || die 'Пустой конфиг'
     awk -f "$APP_DIR/lib/normalize.awk" "$stage/source.conf" >"$stage/awg.conf" || die 'Импорт отклонён. Профиль не создан.'

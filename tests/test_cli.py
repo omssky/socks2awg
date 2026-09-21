@@ -167,6 +167,25 @@ source "$APP_DIR/lib/menu.sh"
         self.assert_ok(result)
         self.assertIn('Jc = 4', (self.profile() / 'awg.conf').read_text())
 
+    def test_paste_ends_on_two_blank_lines_and_keeps_section_separator(self):
+        result = self.run_core('add_profile', 'alice', input=CONFIG + '\n\n')
+        self.assert_ok(result)
+        config = (self.profile() / 'awg.conf').read_text()
+        self.assertIn('[Peer]', config)
+        self.assertIn('PersistentKeepalive = 25', config)
+        self.assertIn('Jc = 4', config)
+
+    def test_paste_accepts_crlf_and_whitespace_blank_lines(self):
+        result = self.run_core('add_profile', 'alice',
+                               input=CONFIG.replace('\n', '\r\n') + ' \r\n\t\r\n')
+        self.assert_ok(result)
+        self.assertIn('[Peer]', (self.profile() / 'awg.conf').read_text())
+
+    def test_empty_paste_creates_nothing(self):
+        result = self.run_core('add_profile', 'alice', input='\n\n')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(list((self.data / 'profiles').iterdir()), [])
+
     def test_truncated_paste_creates_nothing(self):
         result = self.run_core('add_profile', 'alice', input=CONFIG)
         self.assertNotEqual(result.returncode, 0)

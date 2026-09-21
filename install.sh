@@ -90,5 +90,12 @@ wrapper=$(mktemp /usr/local/bin/.socks2awg.XXXXXX)
 printf '#!/usr/bin/env bash\nexec /opt/socks2awg/current/socks2awg "$@"\n' >"$wrapper"
 chmod 755 "$wrapper"
 mv -f "$wrapper" /usr/local/bin/socks2awg
-printf '\nsocks2awg %s установлен. Запустите: sudo socks2awg\n' "$version"
+printf '\nsocks2awg %s установлен.\n' "$version"
 printf 'Профили сохранены. Утилита не настраивает SSH/UFW.\n'
+# Release the installation lock before entering the interactive menu.
+exec 9>&-
+if [[ -t 0 && -t 1 ]]; then
+    /usr/local/bin/socks2awg
+else
+    printf 'Открыть меню: sudo socks2awg\n'
+fi
