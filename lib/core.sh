@@ -157,7 +157,6 @@ add_profile() (
         local finished=0 blank_lines=0
         while IFS= read -r line; do
             line=${line%$'\r'}
-            [[ $line != END ]] || { finished=1; break; }
             if [[ $line != *[![:space:]]* ]]; then
                 blank_lines=$((blank_lines + 1))
                 if ((blank_lines == 2)); then finished=1; break; fi
@@ -167,7 +166,7 @@ add_profile() (
             printf '%s\n' "$line" >>"$stage/source.conf"
             [[ $(wc -c <"$stage/source.conf") -le 65536 ]] || die 'Конфиг слишком большой.'
         done
-        ((finished)) || die 'Ввод прерван: ожидаются две пустые строки или END. Профиль не создан.'
+        ((finished)) || die 'Ввод прерван: ожидаются две пустые строки. Профиль не создан.'
     fi
     [[ -s $stage/source.conf ]] || die 'Пустой конфиг'
     awk -f "$APP_DIR/lib/normalize.awk" "$stage/source.conf" >"$stage/awg.conf" || die 'Импорт отклонён. Профиль не создан.'

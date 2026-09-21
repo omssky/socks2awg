@@ -163,7 +163,7 @@ source "$APP_DIR/lib/menu.sh"
         self.assertIn(meta['password'], (self.mock / 'curl-input').read_text())
 
     def test_paste_and_file_produce_same_tunnel(self):
-        result = self.run_core('add_profile', 'alice', input=CONFIG + 'END\n')
+        result = self.run_core('add_profile', 'alice', input=CONFIG + '\n\n')
         self.assert_ok(result)
         self.assertIn('Jc = 4', (self.profile() / 'awg.conf').read_text())
 
