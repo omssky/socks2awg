@@ -62,7 +62,7 @@ else
     tar --extract --gzip --file "$work/source.tar.gz" --directory "$work/source" --strip-components=1 --no-same-owner
     bundle=$work/source
 fi
-for required in VERSION socks2awg lib/core.sh lib/menu.sh lib/normalize.awk Dockerfile; do
+for required in VERSION socks2awg lib/core.sh lib/menu.sh lib/normalize.awk; do
     [[ -f $bundle/$required ]] || fail "В пакете отсутствует $required"
 done
 for script in "$bundle/socks2awg" "$bundle/lib/core.sh" "$bundle/lib/menu.sh"; do
@@ -73,13 +73,12 @@ version=$(cat "$bundle/VERSION")
 mkdir -p "$INSTALL_ROOT/versions" /var/lib/socks2awg/profiles
 chmod 700 "$INSTALL_ROOT" "$INSTALL_ROOT/versions" /var/lib/socks2awg /var/lib/socks2awg/profiles
 staged=$(mktemp -d "$INSTALL_ROOT/versions/.install.XXXXXX")
-cp -R "$bundle/socks2awg" "$bundle/lib" "$bundle/Dockerfile" "$bundle/VERSION" "$staged/"
-[[ ! -f $bundle/.dockerignore ]] || cp "$bundle/.dockerignore" "$staged/"
+cp -R "$bundle/socks2awg" "$bundle/lib" "$bundle/VERSION" "$staged/"
 chmod 755 "$staged/socks2awg"
-# Build before switching the installed command. Existing containers are untouched.
-image='socks2awg/wireproxy:84f4795ea76f'
+# Pull before switching the installed command. Existing containers are untouched.
+image='ghcr.io/artem-russkikh/wireproxy-awg@sha256:55346f15716f09428363d8b990042ee3bd40c23ef934c5d9ab916ac1a0acc788'
 if ! docker image inspect "$image" >/dev/null 2>&1; then
-    docker build --tag "$image" --file "$staged/Dockerfile" "$staged"
+    docker pull "$image" || fail 'Не удалось скачать образ wireproxy-awg.'
 fi
 release="$INSTALL_ROOT/versions/$revision"
 if [[ -d $release ]]; then rm -rf -- "$staged"; else mv -- "$staged" "$release"; fi

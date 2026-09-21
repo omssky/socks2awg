@@ -22,7 +22,7 @@ jobs:
       - name: Compose schema
         run: |
           source lib/core.sh
-          ENGINE_IMAGE=socks2awg/wireproxy:84f4795ea76f
+          ENGINE_IMAGE=ghcr.io/artem-russkikh/wireproxy-awg@sha256:55346f15716f09428363d8b990042ee3bd40c23ef934c5d9ab916ac1a0acc788
           write_compose alice /var/lib/socks2awg/profiles/alice 31001 > /tmp/compose.json
           docker compose -f /tmp/compose.json config --quiet
   real-tunnel:
@@ -32,9 +32,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Build the pinned engine
-        run: docker build -t socks2awg/wireproxy:84f4795ea76f -f Dockerfile .
       - name: Install the CLI
         run: sudo bash install.sh --from "$PWD"
       - name: SOCKS authentication, AWG round trip, metrics, CLI lifecycle and reinstall
-        run: sudo env WIREPROXY_IMAGE=socks2awg/wireproxy:84f4795ea76f SOCKS2AWG_CLI=/usr/local/bin/socks2awg SOCKS2AWG_TEST_REINSTALL=1 python3 tests/test_engine.py -v
+        run: sudo env WIREPROXY_IMAGE=ghcr.io/artem-russkikh/wireproxy-awg@sha256:55346f15716f09428363d8b990042ee3bd40c23ef934c5d9ab916ac1a0acc788 SOCKS2AWG_CLI=/usr/local/bin/socks2awg SOCKS2AWG_TEST_REINSTALL=1 python3 tests/test_engine.py -v

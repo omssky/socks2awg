@@ -30,7 +30,7 @@
 bash <(curl -fsSL https://raw.githubusercontent.com/omssky/socks2awg/master/install.sh)
 ```
 
-Если Docker отсутствует, установщик предложит установить его через официальный скрипт [get.docker.com](https://get.docker.com). Требуется Docker Compose plugin; уже установленный Docker не заменяется. При первой установке собирается образ wireproxy-awg — это может занять несколько минут.
+Если Docker отсутствует, установщик предложит установить его через официальный скрипт [get.docker.com](https://get.docker.com). Требуется Docker Compose plugin; уже установленный Docker не заменяется. Установщик скачивает готовый образ wireproxy-awg из GHCR. Версия образа зафиксирована по digest; сборка на сервере не требуется.
 
 После установки откройте меню:
 

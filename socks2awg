@@ -3,7 +3,7 @@ set -Eeuo pipefail
 umask 077
 APP_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 DATA_DIR=${SOCKS2AWG_DATA_DIR:-/var/lib/socks2awg}
-ENGINE_IMAGE='socks2awg/wireproxy:84f4795ea76f'
+ENGINE_IMAGE='ghcr.io/artem-russkikh/wireproxy-awg@sha256:55346f15716f09428363d8b990042ee3bd40c23ef934c5d9ab916ac1a0acc788'
 CHECK_URL=${SOCKS2AWG_CHECK_URL:-https://api.ipify.org}
 source "$APP_DIR/lib/core.sh"
 source "$APP_DIR/lib/menu.sh"

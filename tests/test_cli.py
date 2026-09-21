@@ -66,8 +66,8 @@ elif cmd == 'docker':
         else: print('{}')
     elif args[0] == 'image':
         if os.environ.get('NO_IMAGE'): sys.exit(1)
-    elif args[0] == 'build':
-        if os.environ.get('FAIL_BUILD'): sys.exit(1)
+    elif args[0] == 'pull':
+        if os.environ.get('FAIL_PULL'): sys.exit(1)
     elif args[0] == 'run':
         if os.environ.get('FAIL_VALIDATE'):
             print('invalid base64 key: ' + os.environ['TEST_KEY'])
@@ -116,7 +116,7 @@ class CliTest(unittest.TestCase):
         source = '''set -Eeuo pipefail
 umask 077
 APP_DIR=$1; DATA_DIR=$2; shift 2
-ENGINE_IMAGE=socks2awg/wireproxy:84f4795ea76f
+ENGINE_IMAGE=example/wireproxy:test
 CHECK_URL=https://api.ipify.org
 source "$APP_DIR/lib/core.sh"
 source "$APP_DIR/lib/menu.sh"
@@ -214,8 +214,8 @@ source "$APP_DIR/lib/menu.sh"
         self.assertIn('[KEY REDACTED]', result.stderr)
         self.assertEqual(list((self.data / 'profiles').iterdir()), [])
 
-    def test_failed_build_cannot_commit_profile(self):
-        result = self.add(env={'NO_IMAGE': '1', 'FAIL_BUILD': '1'})
+    def test_failed_pull_cannot_commit_profile(self):
+        result = self.add(env={'NO_IMAGE': '1', 'FAIL_PULL': '1'})
         self.assertNotEqual(result.returncode, 0)
         self.assertFalse(self.profile().exists())
 
