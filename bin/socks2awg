@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+umask 077
+APP_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+DATA_DIR=${SOCKS2AWG_DATA_DIR:-/var/lib/socks2awg}
+ENGINE_IMAGE='socks2awg/wireproxy:84f4795ea76f'
+CHECK_URL=${SOCKS2AWG_CHECK_URL:-https://api.ipify.org}
+source "$APP_DIR/lib/core.sh"
+source "$APP_DIR/lib/menu.sh"
+
+main() {
+    local cmd=${1:-menu}
+    if (($#)); then shift; fi
+    case "$cmd" in
+        help|-h|--help) usage; return ;;
+        version|--version) cat "$APP_DIR/VERSION"; return ;;
+        menu|add|list|show|check|stats|logs|start|stop|remove) ;;
+        *) die "Неизвестная команда: $cmd. Справка: socks2awg help" ;;
+    esac
+    require_runtime
+    case "$cmd" in
+        menu) (($# == 0)) || die 'Лишние аргументы'; menu ;;
+        add) add_profile "$@" ;;
+        list) (($# == 0)) || die 'Лишние аргументы'; list_profiles ;;
+        show) (($# == 1)) || die 'Использование: socks2awg show NAME'; show_profile "$1" ;;
+        check) (($# <= 1)) || die 'Использование: socks2awg check [NAME]'; check_profiles "${1:-}" ;;
+        stats) stats_command "$@" ;;
+        logs) (($# == 1)) || die 'Использование: socks2awg logs NAME'; profile_exists "$1"; docker logs --tail 100 "$(container_name "$1")" 2>&1 | redact ;;
+        start|stop) (($# == 1)) || die "Использование: socks2awg $cmd NAME"; lifecycle "$cmd" "$1" ;;
+        remove) remove_profile "$@" ;;
+    esac
+}
+main "$@"

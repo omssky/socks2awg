@@ -1,0 +1,40 @@
+name: Checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  shell-and-cli:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install test tools
+        run: sudo apt-get update && sudo apt-get install -y shellcheck jq openssl
+      - name: Bash syntax and ShellCheck
+        run: |
+          for file in bin/socks2awg install.sh lib/*.sh; do bash -n "$file"; done
+          shellcheck -x bin/socks2awg install.sh lib/*.sh
+      - name: CLI tests
+        run: python3 -m unittest discover -s tests -p test_cli.py -v
+      - name: Compose schema
+        run: |
+          source lib/core.sh
+          ENGINE_IMAGE=socks2awg/wireproxy:84f4795ea76f
+          write_compose alice /var/lib/socks2awg/profiles/alice 31001 > /tmp/compose.json
+          docker compose -f /tmp/compose.json config --quiet
+  real-tunnel:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build the pinned engine
+        run: docker build -t socks2awg/wireproxy:84f4795ea76f -f engine/Dockerfile .
+      - name: Install the CLI
+        run: sudo bash install.sh --from "$PWD"
+      - name: SOCKS authentication, AWG round trip, metrics, CLI lifecycle and reinstall
+        run: sudo env WIREPROXY_IMAGE=socks2awg/wireproxy:84f4795ea76f SOCKS2AWG_CLI=/usr/local/bin/socks2awg SOCKS2AWG_TEST_REINSTALL=1 python3 tests/test_engine.py -v
