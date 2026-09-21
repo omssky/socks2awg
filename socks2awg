@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 umask 077
-APP_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+APP_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 DATA_DIR=${SOCKS2AWG_DATA_DIR:-/var/lib/socks2awg}
 ENGINE_IMAGE='socks2awg/wireproxy:84f4795ea76f'
 CHECK_URL=${SOCKS2AWG_CHECK_URL:-https://api.ipify.org}

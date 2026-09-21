@@ -63,7 +63,7 @@ class RealEngineTest(unittest.TestCase):
             logs = []
             server_name = f'socks2awg-test-peer-{os.getpid()}'
             name = f'test-{os.getpid()}'
-            cli = [os.environ.get('SOCKS2AWG_CLI', str(ROOT / 'bin/socks2awg'))]
+            cli = [os.environ.get('SOCKS2AWG_CLI', str(ROOT / 'socks2awg'))]
             env = dict(os.environ, SOCKS2AWG_DATA_DIR=str(root / 'data'),
                        SOCKS2AWG_CHECK_URL='https://10.85.0.1:8443',
                        CURL_CA_BUNDLE=str(root / 'cert.pem'))

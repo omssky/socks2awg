@@ -2,7 +2,7 @@
 pause_menu() { read -r -p 'Enter — продолжить' _ || true; }
 run_action() {
     # A separate Bash process preserves errexit even when the menu catches failure.
-    if "$APP_DIR/bin/socks2awg" "$@"; then :; else say 'Операция завершилась с ошибкой.'; fi
+    if "$APP_DIR/socks2awg" "$@"; then :; else say 'Операция завершилась с ошибкой.'; fi
     pause_menu
 }
 add_menu() {

@@ -324,7 +324,7 @@ class ConfigTest(unittest.TestCase):
         self.assertNotIn('SaveConfig', result.stdout)
 
     def test_help_without_docker_or_root(self):
-        result = subprocess.run([str(ROOT / 'bin/socks2awg'), 'help'], text=True, capture_output=True)
+        result = subprocess.run([str(ROOT / 'socks2awg'), 'help'], text=True, capture_output=True)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertNotIn('edit NAME', result.stdout)
 

@@ -23,6 +23,10 @@ command -v apt-get >/dev/null || fail 'Нужен apt-get'
 exec 9>/run/lock/socks2awg-install.lock
 flock -w 30 9 || fail 'Уже выполняется другой установщик'
 
+work=$(mktemp -d)
+staged=''
+trap 'rm -rf -- "$work"; if [[ -n $staged ]]; then rm -rf -- "$staged"; fi' EXIT
+
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     ca-certificates curl jq openssl util-linux iproute2 tar coreutils
@@ -34,37 +38,17 @@ if ! command -v docker >/dev/null || ! docker compose version >/dev/null 2>&1; t
     fi
     if ((INSTALL_DOCKER == 0)); then
         if [[ -t 0 ]]; then
-            read -r -p 'Docker не найден. Установить Docker Engine из официального apt-репозитория? [y/N] ' answer
+            read -r -p 'Docker не найден. Установить Docker Engine через get.docker.com? [y/N] ' answer
             [[ $answer == y || $answer == Y ]] || fail 'Установите Docker и повторите запуск.'
         else fail 'Нет Docker. Повторите с --install-docker или установите его самостоятельно.'; fi
     fi
-    # Follow Docker's official apt-repository installation, without removing host packages.
-    if (dpkg-query -W -f='${Status}\n' docker.io containerd runc podman-docker 2>/dev/null || true) | grep 'install ok installed' >/dev/null; then
-        fail 'Найдены потенциально конфликтующие пакеты контейнерного runtime. Установите Docker самостоятельно.'
-    fi
-    install -m 0755 -d /etc/apt/keyrings
-    curl -fsSL --retry 3 "https://download.docker.com/linux/$ID/gpg" -o /etc/apt/keyrings/docker.asc
-    chmod a+r /etc/apt/keyrings/docker.asc
-    codename=${VERSION_CODENAME:-}
-    [[ $codename =~ ^[a-z]+$ ]] || fail 'Не удалось определить кодовое имя ОС'
-    cat >/etc/apt/sources.list.d/docker.sources <<SOURCES
-Types: deb
-URIs: https://download.docker.com/linux/$ID
-Suites: $codename
-Components: stable
-Architectures: $(dpkg --print-architecture)
-Signed-By: /etc/apt/keyrings/docker.asc
-SOURCES
-    apt-get update
-    DEBIAN_FRONTEND=noninteractive apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-    systemctl enable --now docker
+    curl -fsSL --retry 3 https://get.docker.com -o "$work/get-docker.sh" \
+        || fail 'Не удалось скачать установщик Docker.'
+    sh "$work/get-docker.sh" || fail 'Установка Docker завершилась с ошибкой.'
 fi
 docker info >/dev/null 2>&1 || fail 'Docker установлен, но daemon недоступен. Запустите его и повторите установку.'
 docker compose version >/dev/null 2>&1 || fail 'Требуется Docker Compose v2'
 
-work=$(mktemp -d)
-staged=''
-trap 'rm -rf -- "$work"; if [[ -n $staged ]]; then rm -rf -- "$staged"; fi' EXIT
 if [[ -n $FROM ]]; then
     [[ -d $FROM ]] || fail 'Локальная папка не найдена'
     bundle=$(cd -- "$FROM" && pwd)
@@ -78,10 +62,10 @@ else
     tar --extract --gzip --file "$work/source.tar.gz" --directory "$work/source" --strip-components=1 --no-same-owner
     bundle=$work/source
 fi
-for required in VERSION bin/socks2awg lib/core.sh lib/menu.sh lib/normalize.awk engine/Dockerfile; do
+for required in VERSION socks2awg lib/core.sh lib/menu.sh lib/normalize.awk Dockerfile; do
     [[ -f $bundle/$required ]] || fail "В пакете отсутствует $required"
 done
-for script in "$bundle/bin/socks2awg" "$bundle/lib/core.sh" "$bundle/lib/menu.sh"; do
+for script in "$bundle/socks2awg" "$bundle/lib/core.sh" "$bundle/lib/menu.sh"; do
     bash -n "$script"
 done
 version=$(cat "$bundle/VERSION")
@@ -89,13 +73,13 @@ version=$(cat "$bundle/VERSION")
 mkdir -p "$INSTALL_ROOT/versions" /var/lib/socks2awg/profiles
 chmod 700 "$INSTALL_ROOT" "$INSTALL_ROOT/versions" /var/lib/socks2awg /var/lib/socks2awg/profiles
 staged=$(mktemp -d "$INSTALL_ROOT/versions/.install.XXXXXX")
-cp -R "$bundle/bin" "$bundle/lib" "$bundle/engine" "$bundle/VERSION" "$staged/"
+cp -R "$bundle/socks2awg" "$bundle/lib" "$bundle/Dockerfile" "$bundle/VERSION" "$staged/"
 [[ ! -f $bundle/.dockerignore ]] || cp "$bundle/.dockerignore" "$staged/"
-chmod 755 "$staged/bin/socks2awg"
+chmod 755 "$staged/socks2awg"
 # Build before switching the installed command. Existing containers are untouched.
 image='socks2awg/wireproxy:84f4795ea76f'
 if ! docker image inspect "$image" >/dev/null 2>&1; then
-    docker build --tag "$image" --file "$staged/engine/Dockerfile" "$staged"
+    docker build --tag "$image" --file "$staged/Dockerfile" "$staged"
 fi
 release="$INSTALL_ROOT/versions/$revision"
 if [[ -d $release ]]; then rm -rf -- "$staged"; else mv -- "$staged" "$release"; fi
@@ -104,7 +88,7 @@ ln -s "$release" "$INSTALL_ROOT/.current-$$"
 mv -Tf "$INSTALL_ROOT/.current-$$" "$INSTALL_ROOT/current"
 mkdir -p /usr/local/bin
 wrapper=$(mktemp /usr/local/bin/.socks2awg.XXXXXX)
-printf '#!/usr/bin/env bash\nexec /opt/socks2awg/current/bin/socks2awg "$@"\n' >"$wrapper"
+printf '#!/usr/bin/env bash\nexec /opt/socks2awg/current/socks2awg "$@"\n' >"$wrapper"
 chmod 755 "$wrapper"
 mv -f "$wrapper" /usr/local/bin/socks2awg
 printf '\nsocks2awg %s установлен. Запустите: sudo socks2awg\n' "$version"

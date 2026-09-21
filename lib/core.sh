@@ -108,7 +108,7 @@ allocate_port() {
 ensure_engine() {
     docker image inspect "$ENGINE_IMAGE" >/dev/null 2>&1 && return 0
     say 'Первая сборка wireproxy-awg: понадобится интернет и несколько минут.'
-    docker build --tag "$ENGINE_IMAGE" --file "$APP_DIR/engine/Dockerfile" "$APP_DIR" || die 'Не удалось собрать ядро.'
+    docker build --tag "$ENGINE_IMAGE" --file "$APP_DIR/Dockerfile" "$APP_DIR" || die 'Не удалось собрать ядро.'
 }
 write_compose() {
     local name=$1 dir=$2 metrics=$3

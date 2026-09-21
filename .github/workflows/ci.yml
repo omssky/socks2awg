@@ -15,8 +15,8 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y shellcheck jq openssl
       - name: Bash syntax and ShellCheck
         run: |
-          for file in bin/socks2awg install.sh lib/*.sh; do bash -n "$file"; done
-          shellcheck -x bin/socks2awg install.sh lib/*.sh
+          for file in socks2awg install.sh lib/*.sh; do bash -n "$file"; done
+          shellcheck -x socks2awg install.sh lib/*.sh
       - name: CLI tests
         run: python3 -m unittest discover -s tests -p test_cli.py -v
       - name: Compose schema
@@ -33,7 +33,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Build the pinned engine
-        run: docker build -t socks2awg/wireproxy:84f4795ea76f -f engine/Dockerfile .
+        run: docker build -t socks2awg/wireproxy:84f4795ea76f -f Dockerfile .
       - name: Install the CLI
         run: sudo bash install.sh --from "$PWD"
       - name: SOCKS authentication, AWG round trip, metrics, CLI lifecycle and reinstall
