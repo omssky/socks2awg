@@ -39,7 +39,11 @@ lock_mutation() {
     exec 9>"$DATA_DIR/.lock"
     flock -w 30 9 || die 'Другая операция ещё выполняется. Повторите позже.'
 }
-valid_name() { [[ $1 =~ ^[a-z][a-z0-9-]{0,31}$ ]]; }
+valid_name() { local LC_ALL=C; [[ $1 =~ ^[a-z][a-z0-9-]{0,31}$ ]]; }
+name_error() {
+    local LC_ALL=C
+    printf 'Ошибка: некорректное имя %q. Используйте 1–32 символа: a–z, 0–9, дефис; первый — латинская буква.\n' "$1" >&2
+}
 profile_exists() {
     valid_name "$1" || die 'Некорректное имя профиля'
     [[ -f $DATA_DIR/profiles/$1/profile.json ]] || die "Профиль $1 не найден"
@@ -130,7 +134,7 @@ add_profile() (
     local name=${1:-} input='' port='' metrics dir stage password hash other rc=0 line
     [[ -n $name ]] || die 'Использование: socks2awg add NAME [FILE] [--port N]'
     shift
-    valid_name "$name" || die 'Имя: [a-z][a-z0-9-], от 1 до 32 символов'
+    valid_name "$name" || { name_error "$name"; exit 1; }
     while (($#)); do
         case "$1" in
             --port) (($# >= 2)) || die 'После --port нужен номер'; port=$2; shift 2 ;;

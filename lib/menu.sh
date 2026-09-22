@@ -7,7 +7,11 @@ run_action() {
 }
 add_menu() {
     local name method file port
-    read -r -p 'Название профиля: ' name || return 0
+    while :; do
+        read -r -p 'Название профиля (латиница, например agent1): ' name || return 0
+        if valid_name "$name"; then break; fi
+        name_error "$name"
+    done
     say '1. Вставить AWG-конфиг'
     say '2. Указать файл на сервере'
     say '0. Назад'

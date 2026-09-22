@@ -199,6 +199,16 @@ source "$APP_DIR/lib/menu.sh"
         self.assertFalse(self.profile('bob').exists())
         self.assertEqual(before, (self.profile() / 'profile.json').read_bytes())
 
+    def test_menu_accepts_olm_after_rejecting_cyrillic_lookalike(self):
+        result = self.run_core('eval', 'run_action() { shift; add_profile "$@"; }; add_menu',
+                               input='оlm\nolm\n1\n\n' + CONFIG + '\n\n')
+        self.assert_ok(result)
+        self.assertTrue(self.profile('olm').exists())
+        self.assertFalse(self.profile('оlm').exists())
+        self.assertIn('некорректное имя', result.stderr)
+        self.assertIn(r'\320\276', result.stderr)
+        self.assertIn('Вставьте AWG-конфиг', result.stdout)
+
     def test_bad_names_never_escape_profiles(self):
         for name in ['../alice', '/tmp/alice', 'Alice', '-bad', 'a;touch pwn', 'a' * 33]:
             self.assertNotEqual(self.add(name).returncode, 0)
